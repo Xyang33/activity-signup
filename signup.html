@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【XX活动】报名通道</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); width: 100%; max-width: 500px; padding: 30px; }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 25px; }
+        .countdown-box { background: linear-gradient(to right, #3498db, #2ecc71); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; }
+        #countdownTimer { font-size: 36px; font-weight: bold; letter-spacing: 2px; margin: 10px 0; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #34495e; margin-bottom: 8px; font-weight: 600; }
+        input { width: 100%; padding: 14px; border: 2px solid #e0e6ed; border-radius: 10px; font-size: 16px; transition: all 0.3s; }
+        input:focus { border-color: #3498db; outline: none; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); }
+        #submitBtn { width: 100%; padding: 16px; background: linear-gradient(to right, #e74c3c, #e67e22); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
+        #submitBtn:disabled { background: #95a5a6 !important; cursor: not-allowed; transform: none !important; }
+        #submitBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4); }
+        .status { text-align: center; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📝 XX活动报名</h2>
+        <p class="subtitle">请提前填写信息，提交功能将于 <strong id="openTimeDisplay"></strong> 准时开放</p>
+
+        <div class="countdown-box">
+            <div>⏳ 距离提交开放还有：</div>
+            <div id="countdownTimer">--:--:--</div>
+            <div>请勿刷新页面，填写完成后耐心等待</div>
+        </div>
+
+        <form id="registrationForm">
+            <div class="form-group">
+                <label for="studentName">👦 学生姓名</label>
+                <input type="text" id="studentName" name="studentName" required placeholder="请输入学生姓名">
+            </div>
+            <div class="form-group">
+                <label for="parentPhone">📱 家长电话</label>
+                <input type="tel" id="parentPhone" name="parentPhone" required placeholder="请输入联系电话">
+            </div>
+            <button type="submit" id="submitBtn" disabled>🕒 等待提交开放（时间未到）</button>
+        </form>
+        <div id="successMessage" class="status success">✅ 提交成功！您的报名信息已记录。</div>
+        <div id="errorMessage" class="status error">❌ 提交失败，请稍后重试或联系管理员。</div>
+    </div>
+
+    <script>
+        // ==================== 【核心配置区】请仔细修改 ====================
+        const CONFIG = {
+            // 1. 设定报名开放时间（北京时间），格式必须为：YYYY-MM-DD HH:MM:SS
+            OPEN_TIME: '2026-01-15 11:30:00',
+            // 2. 粘贴你的腾讯文档提交链接（来自第二步）
+            TENCENT_DOC_URL: 'https://docs.qq.com/sheet/DQVBuQkNxRmVWcmhH' // 请替换此示例链接
+        };
+        // ==================== 配置结束，以下勿动 ====================
+
+        // 全局变量
+        let openTimeStamp;
+        const form = document.getElementById('registrationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const countdownEl = document.getElementById('countdownTimer');
+        const openTimeDisplayEl = document.getElementById('openTimeDisplay');
+        const successMsgEl = document.getElementById('successMessage');
+        const errorMsgEl = document.getElementById('errorMessage');
+
+        // 初始化：显示时间，开始倒计时
+        function init() {
+            openTimeStamp = new Date(CONFIG.OPEN_TIME.replace(' ', 'T') + '+08:00').getTime(); // 转为北京时间时间戳
+            openTimeDisplayEl.textContent = CONFIG.OPEN_TIME;
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // 核心倒计时函数
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const diff = openTimeStamp - now;
+            if (diff <= 0) {
+                countdownEl.textContent = "00:00:00";
+                activateSubmitButton();
+                return;
+            }
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            countdownEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // 激活提交按钮
+        function activateSubmitButton() {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🚀 点击提交报名信息';
+            submitBtn.style.background = 'linear-gradient(to right, #2ecc71, #3498db)';
+        }
+
+        // 处理表单提交：将数据发送到腾讯文档
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault(); // 阻止默认表单提交
+
+            if (new Date().getTime() < openTimeStamp) {
+                alert("提交时间未到！");
+                return;
+            }
+
+            const formData = {
+                timestamp: new Date().toLocaleString('zh-CN', { hour12: false }) + `.${new Date().getMilliseconds()}`,
+                name: document.getElementById('studentName').value.trim(),
+                phone: document.getElementById('parentPhone').value.trim()
+            };
+
+            // 禁用按钮，防止重复提交
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+
+            try {
+                // 关键：将数据 POST 到腾讯文档的收集接口
+                // 注意：此 URL 需要从腾讯文档的“收集表”功能获取，普通分享链接无效。
+                // 这里是一个模拟示例，实际需要你创建一个“收集表”并获取其提交地址。
+                const response = await fetch(CONFIG.TENCENT_DOC_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    showMessage(successMsgEl);
+                    form.reset(); // 清空表单
+                    setTimeout(() => { hideMessage(successMsgEl); submitBtn.disabled = true; }, 3000);
+                } else {
+                    throw new Error('提交失败');
+                }
+            } catch (error) {
+                console.error('提交错误:', error);
+                showMessage(errorMsgEl);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 点击提交报名信息';
+                setTimeout(() => hideMessage(errorMsgEl), 5000);
+            }
+        });
+
+        function showMessage(el) { el.style.display = 'block'; }
+        function hideMessage(el) { el.style.display = 'none'; }
+
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
